@@ -8,6 +8,8 @@
 
 ## Usage examples
 
+#### OpenAI
+
 ```python
 from ai_bricks.api import openai
 import os
@@ -24,6 +26,8 @@ m3 = openai.model('text-embedding-ada-002')
 vector = m3.embedding('Hello there!')['vector']
 
 ```
+
+#### co:here
 
 ```python
 from ai_bricks.api import cohere
