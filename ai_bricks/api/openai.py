@@ -125,7 +125,7 @@ class ChatModel(BaseTextModel):
 class EmbeddingModel(BaseTextModel):
 	PARAMS = ['model','user']
 	
-	def embedding(self, text):
+	def embed(self, text):
 		out = {}
 		#
 		kwargs = dict(

@@ -37,6 +37,18 @@ class TextModel:
 		out['text'] = resp.generations[0].text
 		out['raw'] = resp # XXX
 		return out
+	
+	def embed(self, text):
+		out = {}
+		resp = self.embed_many([text])
+		out['vector'] = resp['vectors'][0]
+		return out
+	
+	def embed_many(self, texts):
+		out = {}
+		resp = self.client.embed(texts)
+		out['vectors'] = resp.embeddings
+		return out
 
 
 # REF: https://cohere.ai/pricing

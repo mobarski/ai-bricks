@@ -24,9 +24,9 @@ text = m1.complete('Hello there!')['text']
 m2 = openai.model('text-davinci-003')
 text = m2.insert('[insert] Kenobi!')['text']
 
-# embedding
+# embed
 m3 = openai.model('text-embedding-ada-002')
-vector = m3.embedding('Hello there!')['vector']
+vector = m3.embed('Hello there!')['vector']
 
 ```
 
@@ -41,6 +41,10 @@ cohere.use_key(os.getenv('COHERE_KEY'))
 # complete
 m1 = cohere.model('xlarge')
 text = m1.complete('Hello there!')['text']
+
+# embed
+vector = m1.embed('Hello there!')['vector']
+vectors = m1.embed_many(['Hello there!','General Kenobi!'])['vectors']
 
 ```
 
