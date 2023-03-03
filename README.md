@@ -25,3 +25,13 @@ vector = m3.embedding('Hello there!')['vector']
 
 ```
 
+```python
+from ai_bricks.api import cohere
+import os
+
+cohere.use_key(os.getenv('COHERE_KEY'))
+
+m1 = cohere.model('xlarge')
+text = m1.complete('Hello there!')['text']
+```
+
