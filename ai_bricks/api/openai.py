@@ -2,7 +2,6 @@
 
 # TODO: chat-pre-prompt
 # TODO: max_new_tokens
-# TODO: callbacks
 # TODO: refactor kwargs
 # TODO: refactor encoder
 
@@ -25,6 +24,14 @@ def model(name, **kwargs):
 		_class = TextModel
 	return _class(name, **kwargs)
 
+callbacks = {'before':[], 'after':[]}
+def add_callback(kind, fun):
+	"add callback to every model created after this call"
+	# kind: before|after
+	chain = callbacks[kind]
+	if fun not in chain:
+		chain.append(fun)
+
 # ===[ MODELS ]================================================================
 
 
@@ -33,6 +40,7 @@ class BaseTextModel:
 		self.config = kwargs
 		self.config['model'] = name
 		self.max_tokens = _get_model_max_tokens(name)
+		self.callbacks = {k:v.copy() for k,v in callbacks.items()}
 		try:
 			self.encoder = tiktoken.encoding_for_model(name)
 		except KeyError:
@@ -41,12 +49,18 @@ class BaseTextModel:
 	def tokens_cnt(self, text):
 		return len(self.encoder.encode(text))
 
+	def add_callback(self, kind, fun):
+		# kind: before|after
+		chain = self.callbacks[kind]
+		if fun not in chain:
+			chain.append(fun)
+
 	def callbacks_before(self, kwargs):
-		for callback in []: # TODO
+		for callback in self.callbacks.get('before',[]):
 			callback(kwargs, self)
 	
 	def callbacks_after(self, out, resp):
-		for callback in []: # TODO
+		for callback in self.callbacks.get('after',[]):
 			callback(out, resp, self)
 
 
