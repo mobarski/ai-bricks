@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
 	name='ai_bricks',
@@ -10,5 +10,5 @@ setup(
 		'tiktoken',
 		'cohere',
 	],
-	packages=['ai_bricks']
+	packages=find_packages()
 )
