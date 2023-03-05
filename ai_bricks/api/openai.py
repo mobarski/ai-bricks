@@ -15,6 +15,10 @@ import openai
 def use_key(key):
 	openai.api_key = key
 
+global_config = {}
+def set_global(key, value):
+	global_config[key] = value
+
 def model(name, **kwargs):
 	if name.startswith('gpt-'):
 		_class = ChatModel
@@ -37,7 +41,9 @@ def add_callback(kind, fun):
 
 class BaseTextModel:
 	def __init__(self, name, **kwargs):
-		self.config = kwargs
+		self.config = {}
+		self.config.update(global_config)
+		self.config.update(kwargs)
 		self.config['model'] = name
 		self.max_tokens = _get_model_max_tokens(name)
 		self.callbacks = {k:v.copy() for k,v in callbacks.items()}
