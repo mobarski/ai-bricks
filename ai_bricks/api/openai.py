@@ -55,6 +55,15 @@ class BaseTextModel:
 		if fun not in chain:
 			chain.append(fun)
 
+	def update_kwargs(self, kwargs, kw):
+		"add config to kwargs and then add kw"
+		for k,v in self.config.items():
+			if k in self.PARAMS:
+				kwargs[k] = v
+		for k,v in kw.items():
+			if k in self.PARAMS and k not in ['model']:
+				kwargs[k] = v
+
 	def callbacks_before(self, kwargs):
 		for callback in self.callbacks.get('before',[]):
 			callback(kwargs, self)
@@ -67,16 +76,14 @@ class BaseTextModel:
 class TextModel(BaseTextModel):
 	PARAMS = ['model','temperature','top_p','n','stream','stop','presence_penalty','frequency_penalty','logit_bias','user',   'logprobs','echo','best_of']
 	
-	def complete(self, prompt):
+	def complete(self, prompt, **kw):
 		out = {}
 		#
 		kwargs = dict(
 			max_tokens = self.max_tokens - self.tokens_cnt(prompt),
 			prompt = prompt,
 		)
-		for k,v in self.config.items():
-			if k in self.PARAMS:
-				kwargs[k] = v
+		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
 		#
 		resp = openai.Completion.create(**kwargs)
@@ -86,7 +93,7 @@ class TextModel(BaseTextModel):
 		self.callbacks_after(out, resp)
 		return out
 	
-	def insert(self, prompt, marker='[insert]'):
+	def insert(self, prompt, marker='[insert]', **kw):
 		out = {}
 		#
 		prompt1,_,prompt2 = prompt.partition(marker)
@@ -95,9 +102,7 @@ class TextModel(BaseTextModel):
 			prompt = prompt1,
 			suffix = prompt2,
 		)
-		for k,v in self.config.items():
-			if k in self.PARAMS:
-				kwargs[k] = v
+		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
 		#
 		resp = openai.Completion.create(**kwargs)
@@ -111,7 +116,7 @@ class TextModel(BaseTextModel):
 class ChatModel(BaseTextModel):
 	PARAMS = ['model','temperature','top_p','n','stream','stop','presence_penalty','frequency_penalty','logit_bias','user']
 	
-	def complete(self, prompt):
+	def complete(self, prompt, **kw):
 		out = {}
 		#
 		messages = []
@@ -123,9 +128,7 @@ class ChatModel(BaseTextModel):
 			max_tokens = self.max_tokens - self.tokens_cnt(prompt + pre_prompt),
 			messages = messages,
 		)
-		for k,v in self.config.items():
-			if k in self.PARAMS:
-				kwargs[k] = v
+		self.update_kwargs(kwargs, kw)
 		kwargs['max_tokens'] -= 30 # UGLY: workaround for not counting chat specific tokens
 		self.callbacks_before(kwargs)
 		#
@@ -140,15 +143,13 @@ class ChatModel(BaseTextModel):
 class EmbeddingModel(BaseTextModel):
 	PARAMS = ['model','user']
 	
-	def embed(self, text):
+	def embed(self, text, **kw):
 		out = {}
 		#
 		kwargs = dict(
 			input = text,
 		)
-		for k,v in self.config.items():
-			if k in self.PARAMS:
-				kwargs[k] = v
+		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
 		#
 		resp = openai.Embedding.create(**kwargs)
