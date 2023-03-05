@@ -46,7 +46,7 @@ class BaseTextModel:
 		except KeyError:
 			self.encoder = tiktoken.encoding_for_model('text-davinci-003')
 
-	def tokens_cnt(self, text):
+	def tokens_count(self, text):
 		return len(self.encoder.encode(text))
 
 	def add_callback(self, kind, fun):
@@ -80,7 +80,7 @@ class TextModel(BaseTextModel):
 		out = {}
 		#
 		kwargs = dict(
-			max_tokens = self.max_tokens - self.tokens_cnt(prompt),
+			max_tokens = self.max_tokens - self.tokens_count(prompt),
 			prompt = prompt,
 		)
 		self.update_kwargs(kwargs, kw)
@@ -98,7 +98,7 @@ class TextModel(BaseTextModel):
 		#
 		prompt1,_,prompt2 = prompt.partition(marker)
 		kwargs = dict(
-			max_tokens = self.max_tokens - self.tokens_cnt(prompt),
+			max_tokens = self.max_tokens - self.tokens_count(prompt),
 			prompt = prompt1,
 			suffix = prompt2,
 		)
@@ -125,7 +125,7 @@ class ChatModel(BaseTextModel):
 			messages += [{'role':'system', 'content':pre_prompt}]
 		messages += [{'role':'user', 'content':prompt}]
 		kwargs = dict(
-			max_tokens = self.max_tokens - self.tokens_cnt(prompt + pre_prompt),
+			max_tokens = self.max_tokens - self.tokens_count(prompt + pre_prompt),
 			messages = messages,
 		)
 		self.update_kwargs(kwargs, kw)
