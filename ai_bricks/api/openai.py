@@ -114,12 +114,13 @@ class ChatModel(BaseTextModel):
 	def complete(self, prompt):
 		out = {}
 		#
-		messages = [
-			# TODO: pre-prompt ie: {'role':'system', 'content':"output raw text"},
-			{'role':'user', 'content':prompt},
-		]
+		messages = []
+		pre_prompt = self.config.get('pre_prompt','')
+		if pre_prompt:
+			messages += [{'role':'system', 'content':pre_prompt}]
+		messages += [{'role':'user', 'content':prompt}]
 		kwargs = dict(
-			max_tokens = self.max_tokens - self.tokens_cnt(prompt),
+			max_tokens = self.max_tokens - self.tokens_cnt(prompt + pre_prompt),
 			messages = messages,
 		)
 		for k,v in self.config.items():
