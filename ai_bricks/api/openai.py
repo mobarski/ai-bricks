@@ -11,9 +11,13 @@
 
 import tiktoken
 import openai
+import os
 
 def use_key(key):
 	openai.api_key = key
+if not openai.api_key:
+	use_key(os.getenv('OPENAI_KEY'))
+
 
 global_config = {}
 def set_global(key, value):

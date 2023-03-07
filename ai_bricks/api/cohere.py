@@ -1,4 +1,5 @@
 import cohere
+import os
 
 api_key = None
 
@@ -6,6 +7,8 @@ api_key = None
 def use_key(key):
 	global api_key
 	api_key = key
+if not openai.api_key:
+	use_key(os.getenv('COHERE_KEY'))
 
 
 # models: medium|xlarge
