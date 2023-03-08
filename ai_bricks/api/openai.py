@@ -154,17 +154,23 @@ class EmbeddingModel(BaseTextModel):
 	PARAMS = ['model','user']
 	
 	def embed(self, text, **kw):
+		out = self.embed_many([text], **kw)
+		out['vector'] = out['vectors'][0]
+		del out['vectors']
+		return out
+
+	def embed_many(self, texts, **kw):
 		out = {}
 		#
 		kwargs = dict(
-			input = text,
+			input = texts,
 		)
 		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
 		#
 		resp = openai.Embedding.create(**kwargs)
 		#
-		out['vector'] = list(resp['data'][0]['embedding'])
+		out['vectors'] = [x['embedding'] for x in resp['data']]
 		out['usage']  = dict(resp['usage'])
 		self.callbacks_after(out, resp)
 		return out

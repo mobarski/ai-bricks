@@ -7,7 +7,7 @@ api_key = None
 def use_key(key):
 	global api_key
 	api_key = key
-if not openai.api_key:
+if not api_key:
 	use_key(os.getenv('COHERE_KEY'))
 
 
