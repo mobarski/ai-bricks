@@ -41,6 +41,14 @@ class TextModel:
 		out['raw'] = resp # XXX
 		return out
 	
+	def complete_many(self, prompts):
+		out = {}
+		out['texts'] = []
+		for p in prompts:
+			resp = self.complete(p)
+			out['texts'] += [resp['text']]
+		return out
+	
 	def embed(self, text):
 		out = {}
 		resp = self.embed_many([text])

@@ -1,7 +1,8 @@
 "OpenAI API adapter / facade"
 
-# TODO: chat-pre-prompt
 # TODO: max_new_tokens
+# TODO: chat-pre-prompt
+
 # TODO: refactor kwargs
 # TODO: refactor encoder
 
@@ -102,7 +103,24 @@ class TextModel(BaseTextModel):
 		out['usage'] = dict(resp['usage'])
 		self.callbacks_after(out, resp)
 		return out
-	
+
+	def complete_many(self, prompts, **kw):
+		out = {}
+		#
+		kwargs = dict(
+			max_tokens = self.max_tokens - max([self.token_count(p) for p in prompts]),
+			prompt = prompts,
+		)
+		self.update_kwargs(kwargs, kw)
+		self.callbacks_before(kwargs)
+		#
+		resp = openai.Completion.create(**kwargs)
+		#
+		out['texts'] = [x['text'] for x in resp['choices']]
+		out['usage'] = dict(resp['usage'])
+		self.callbacks_after(out, resp)
+		return out
+
 	def insert(self, prompt, marker='[insert]', **kw):
 		out = {}
 		#
