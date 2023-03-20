@@ -210,6 +210,8 @@ class EmbeddingModel(BaseTextModel):
 # REF: https://platform.openai.com/docs/models
 def _get_model_max_tokens(model):
 	model_max_tokens = {
+		'gpt-4':8192,
+		'gpt-4-32k':32768,
 		'gpt-3.5-turbo':4096,
 		'gpt-3.5-turbo-0301':4096,
 		'text-davinci-003':4000,
