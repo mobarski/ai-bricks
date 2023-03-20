@@ -12,6 +12,7 @@
 
 import tiktoken
 import openai
+import time
 import os
 
 def use_key(key):
@@ -96,9 +97,11 @@ class TextModel(BaseTextModel):
 		)
 		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
+		t0 = time.time()
 		#
 		resp = openai.Completion.create(**kwargs)
 		#
+		out['rtt'] = time.time() - t0
 		out['text']  = resp['choices'][0]['text']
 		out['usage'] = dict(resp['usage'])
 		self.callbacks_after(out, resp)
@@ -113,9 +116,11 @@ class TextModel(BaseTextModel):
 		)
 		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
+		t0 = time.time()
 		#
 		resp = openai.Completion.create(**kwargs)
 		#
+		out['rtt'] = time.time() - t0
 		out['texts'] = [x['text'] for x in resp['choices']]
 		out['usage'] = dict(resp['usage'])
 		self.callbacks_after(out, resp)
@@ -132,9 +137,11 @@ class TextModel(BaseTextModel):
 		)
 		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
+		t0 = time.time()
 		#
 		resp = openai.Completion.create(**kwargs)
 		#
+		out['rtt'] = time.time() - t0
 		out['text']  = resp['choices'][0]['text']
 		out['usage'] = dict(resp['usage'])
 		self.callbacks_after(out, resp)
@@ -159,9 +166,11 @@ class ChatModel(BaseTextModel):
 		self.update_kwargs(kwargs, kw)
 		kwargs['max_tokens'] -= 30 # UGLY: workaround for not counting chat specific tokens
 		self.callbacks_before(kwargs)
+		t0 = time.time()
 		#
 		resp = openai.ChatCompletion.create(**kwargs)
 		#
+		out['rtt'] = time.time() - t0
 		out['text'] = resp['choices'][0]['message']['content']
 		out['usage'] = dict(resp['usage'])
 		self.callbacks_after(out, resp)
@@ -185,9 +194,11 @@ class EmbeddingModel(BaseTextModel):
 		)
 		self.update_kwargs(kwargs, kw)
 		self.callbacks_before(kwargs)
+		t0 = time.time()
 		#
 		resp = openai.Embedding.create(**kwargs)
 		#
+		out['rtt'] = time.time() - t0
 		out['vectors'] = [x['embedding'] for x in resp['data']]
 		out['usage']  = dict(resp['usage'])
 		self.callbacks_after(out, resp)

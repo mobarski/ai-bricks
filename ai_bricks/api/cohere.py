@@ -1,4 +1,5 @@
 import cohere
+import time
 import os
 
 api_key = None
@@ -34,9 +35,11 @@ class TextModel:
 		for k,v in self.config.items():
 			if k in self.PARAMS:
 				kwargs[k] = v
+		t0 = time.time()
 		#
 		resp = self.client.generate(**kwargs)
 		#
+		out['rtt'] = time.time() - t0
 		out['text'] = resp.generations[0].text
 		out['raw'] = resp # XXX
 		return out
@@ -44,9 +47,11 @@ class TextModel:
 	def complete_many(self, prompts):
 		out = {}
 		out['texts'] = []
+		t0 = time.time()
 		for p in prompts:
 			resp = self.complete(p)
 			out['texts'] += [resp['text']]
+		out['rtt'] = time.time() - t0
 		return out
 	
 	def embed(self, text):
@@ -57,7 +62,9 @@ class TextModel:
 	
 	def embed_many(self, texts):
 		out = {}
+		t0 = time.time()
 		resp = self.client.embed(texts)
+		out['rtt'] = time.time() - t0
 		out['vectors'] = resp.embeddings
 		return out
 
