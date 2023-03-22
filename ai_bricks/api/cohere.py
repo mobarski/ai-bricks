@@ -19,20 +19,24 @@ def model(name, **kwargs):
 
 class TextModel:
 	PARAMS = ['model','temperature','stop_sequences'] # TODO
+	MAPPED = {'stop':'stop_sequences'}
 	
 	def __init__(self, name, **kwargs):
 		self.config = kwargs
 		self.config['model'] = name
 		self.client = cohere.Client(api_key)
 
-	def complete(self, prompt):
+	def complete(self, prompt, **kw):
 		out = {}
 		#
 		kwargs = dict(
 			prompt = prompt,
 			max_tokens = 100, # TODO
 		)
-		for k,v in self.config.items():
+		config = self.config.copy()
+		config.update(kw) # NEW
+		for k,v in config.items():
+			k = self.MAPPED.get(k,k) # NEW
 			if k in self.PARAMS:
 				kwargs[k] = v
 		t0 = time.time()
