@@ -4,12 +4,11 @@ import re
 # 	Question: the input question you must answer
 def v1(question, model, actions, hints='', iter_limit=5):
 	out = {'text':''}
-	print(f'QUESTION: {question}\n')
+	print(f'\nQUESTION: {question}\n')
 	prompt = f"""
 	Answer the following questions as best you can.
 	Question: {question}
 	
-	You are augmented with the following actions: {' '.join(actions)}.
 	{hints}
 
 	Use the following format:
@@ -27,8 +26,8 @@ def v1(question, model, actions, hints='', iter_limit=5):
 	#print(prompt) # XXX
 	for i in range(iter_limit):
 		x = model.complete(prompt, stop=['Observation:'])
-		#print()
-		#print('>>> rtt',x['rtt'])
+		print()
+		print(f"### rtt {x['rtt']:0.2f}s")
 		#print('usage',x.get('usage',{}))
 		steps = re.findall('(?m)^([A-Z][^:]+):\s*(.*?)(?:\n|$)', x['text'])
 		for step in steps:
@@ -39,8 +38,9 @@ def v1(question, model, actions, hints='', iter_limit=5):
 			out['status'] = 'Error: empty steps'
 			break
 		elif steps[-1][0] == 'Final Answer':
-			out['text'] = x['text']
 			out['status'] = 'ok'
+			out['text'] = dict(steps).get('Final Answer', x['text']) # TODO
+			out['steps'] = steps
 			break
 		elif steps[-2][0] == 'Action' and steps[-1][0] == 'Action Input':
 			action = steps[-2][1].strip().partition(' ')[0]
