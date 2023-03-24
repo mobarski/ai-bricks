@@ -12,9 +12,10 @@ model = openai.model('gpt-3.5-turbo', temperature=0.5) # key from OPENAI_KEY env
 #model = anthropic.model('claude-v1', temperature=0.5) # key from ANTHROPIC_KEY env variable
 # model = anthropic.model('claude-v1.2', temperature=0.5) # key from ANTHROPIC_KEY env variable
 
-def log_state(kw, self):
-    print('PROMPT', kw['messages'][1]['content'])
-model.add_callback('before', log_state)
+if 0:
+	def log_state(kw, self):
+		print('PROMPT', kw['messages'][1]['content'])
+	model.add_callback('before', log_state)
 
 agent_actions.VERBOSE_EXCEPTIONS = False
 actions = {

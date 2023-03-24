@@ -156,12 +156,12 @@ class ChatModel(BaseTextModel):
 		out = {}
 		#
 		messages = []
-		sys_prompt = kw.get('sys_prompt', self.config.get('sys_prompt',''))
-		if sys_prompt:
-			messages += [{'role':'system', 'content':sys_prompt}]
+		system_prompt = kw.get('system_prompt', self.config.get('system_prompt',''))
+		if system_prompt:
+			messages += [{'role':'system', 'content':system_prompt}]
 		messages += [{'role':'user', 'content':prompt}]
 		kwargs = dict(
-			max_tokens = self.max_tokens - self.token_count(prompt + sys_prompt),
+			max_tokens = self.max_tokens - self.token_count(prompt + system_prompt),
 			messages = messages,
 		)
 		self.update_kwargs(kwargs, kw)

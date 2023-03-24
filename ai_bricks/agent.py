@@ -9,7 +9,7 @@ Example:
 
 Question: Who is higher, King Arthur or Queen Guinevere?
 Thought: I shoul look up the height of King Arthur first, then Queen Guinevere and then compare them.
-Action: [wikipedia-search]
+Action: wikipedia-search
 Action Input: "King Arthur" height
 Observation: ['King Arthur']
 """
@@ -19,7 +19,7 @@ def v1(question, model, actions, hints='', iter_limit=5):
 	out = {'text':''}
 	tmp = {'rtt_list':[], 'cost_list':[]}
 	print(f'\nQUESTION: {question}\n')
-	sys_prompt = f"""
+	system = f"""
 Answer the following questions as best you can.
 Question: {question}
 
@@ -36,10 +36,10 @@ Final Answer: the final answer to the original input question
 
 {EXAMPLE}
 """
-	#print('SYS PROMPT:', sys_prompt) # XXX
+	#print('SYS PROMPT:', system) # XXX
 	prompt = """Begin!\n"""
 	for i in range(iter_limit):
-		x = model.complete(prompt, sys_prompt=sys_prompt, stop=['Observation:'])
+		x = model.complete(prompt, system_prompt=system, stop=['Observation:'])
 		tmp['rtt_list'].append(x['rtt'])
 		tmp['cost_list'].append(x.get('cost',0))
 		print()
