@@ -4,6 +4,7 @@ class BaseModel:
 	MAPPED = {}
 
 	def __init__(self, name, **kwargs):
+		self.name = name
 		self.usage = {}
 		self.config = {}
 		self.config.update(kwargs)
