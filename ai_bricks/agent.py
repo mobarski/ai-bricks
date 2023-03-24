@@ -4,6 +4,7 @@ import re
 # 	Question: the input question you must answer
 def v1(question, model, actions, hints='', iter_limit=5):
 	out = {'text':''}
+	tmp = {'rtt_list':[], 'cost_list':[]}
 	print(f'\nQUESTION: {question}\n')
 	prompt = f"""
 	Answer the following questions as best you can.
@@ -26,6 +27,7 @@ def v1(question, model, actions, hints='', iter_limit=5):
 	#print(prompt) # XXX
 	for i in range(iter_limit):
 		x = model.complete(prompt, stop=['Observation:'])
+		tmp['rtt_list'].append(x['rtt'])
 		print()
 		print(f"### rtt {x['rtt']:0.2f}s")
 		#print('usage',x.get('usage',{}))
@@ -61,4 +63,7 @@ def v1(question, model, actions, hints='', iter_limit=5):
 	else:
 		out['status'] = 'Error: iterations limit reached'
 	print() # XXX
+	for x in ['rtt_list']:
+		out[x] = tmp[x]
 	return out
+

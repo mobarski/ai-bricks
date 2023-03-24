@@ -20,11 +20,6 @@ def use_key(key):
 if not openai.api_key:
 	use_key(os.getenv('OPENAI_KEY'))
 
-
-global_config = {}
-def set_global(key, value):
-	global_config[key] = value
-
 def model(name, **kwargs):
 	if name.startswith('gpt-'):
 		_class = ChatModel
@@ -33,6 +28,10 @@ def model(name, **kwargs):
 	else:
 		_class = TextModel
 	return _class(name, **kwargs)
+
+global_config = {}
+def set_global(key, value):
+	global_config[key] = value
 
 callbacks = {'before':[], 'after':[]}
 def add_callback(kind, fun):
@@ -44,15 +43,16 @@ def add_callback(kind, fun):
 
 # ===[ MODELS ]================================================================
 
+from .base import BaseModel
 
-class BaseTextModel:
+# TODO: rtt and usage as callbacks
+
+class BaseTextModel(BaseModel):
 	def __init__(self, name, **kwargs):
-		self.config = {}
+		super().__init__(name, **kwargs)
 		self.config.update(global_config)
-		self.config.update(kwargs)
-		self.config['model'] = name
+		self.callbacks = {k:v.copy() for k,v in callbacks.items()} # TODO: better update
 		self.max_tokens = _get_model_max_tokens(name)
-		self.callbacks = {k:v.copy() for k,v in callbacks.items()}
 		try:
 			self.encoder = tiktoken.encoding_for_model(name)
 		except KeyError:
@@ -60,29 +60,29 @@ class BaseTextModel:
 
 	def token_count(self, text):
 		return len(self.encoder.encode(text))
-
-	def add_callback(self, kind, fun):
-		# kind: before|after
-		chain = self.callbacks[kind]
-		if fun not in chain:
-			chain.append(fun)
-
-	def update_kwargs(self, kwargs, kw):
-		"add config to kwargs and then add kw"
-		for k,v in self.config.items():
-			if k in self.PARAMS:
-				kwargs[k] = v
-		for k,v in kw.items():
-			if k in self.PARAMS and k not in ['model']:
-				kwargs[k] = v
-
-	def callbacks_before(self, kwargs):
-		for callback in self.callbacks.get('before',[]):
-			callback(kwargs, self)
 	
-	def callbacks_after(self, out, resp):
-		for callback in self.callbacks.get('after',[]):
-			callback(out, resp, self)
+	def get_usd_cost(self, usage):
+		model = self.config['model']
+		prompt_tokens = usage['prompt_tokens']
+		output_tokens = usage['total_tokens'] - prompt_tokens
+		prompt_price = {
+			'gpt-4':0.03,
+			'gpt-4-32k':0.06,
+			'gpt-3.5-turbo':0.002,
+			'text-davinci-003':0.02,
+			'text-davinci-002':0.02,
+			'text-davinci-001':0.02,
+			'text-curie-001':0.002,
+			'text-babbage-001':0.0005,
+			'text-ada-001':0.0004,
+			'text-embedding-ada-002':0.0004,
+		}.get(model)
+		output_price = {
+			'gpt-4':0.06,
+			'gpt-4-32k':0.12,
+			'text-embedding-ada-002':0,
+		}.get(model, prompt_price)
+		return (prompt_tokens/1000 * prompt_price) + (output_tokens/1000 * output_price) # TODO: math.ceil ???
 
 
 class TextModel(BaseTextModel):
@@ -144,6 +144,7 @@ class TextModel(BaseTextModel):
 		out['rtt'] = time.time() - t0
 		out['text']  = resp['choices'][0]['text']
 		out['usage'] = dict(resp['usage'])
+		out['cost'] = self.get_usd_cost(resp['usage'])
 		self.callbacks_after(out, resp)
 		return out
 
@@ -155,12 +156,12 @@ class ChatModel(BaseTextModel):
 		out = {}
 		#
 		messages = []
-		pre_prompt = self.config.get('pre_prompt','')
-		if pre_prompt:
-			messages += [{'role':'system', 'content':pre_prompt}]
+		sys_prompt = kw.get('sys_prompt', self.config.get('sys_prompt',''))
+		if sys_prompt:
+			messages += [{'role':'system', 'content':sys_prompt}]
 		messages += [{'role':'user', 'content':prompt}]
 		kwargs = dict(
-			max_tokens = self.max_tokens - self.token_count(prompt + pre_prompt),
+			max_tokens = self.max_tokens - self.token_count(prompt + sys_prompt),
 			messages = messages,
 		)
 		self.update_kwargs(kwargs, kw)
@@ -173,6 +174,7 @@ class ChatModel(BaseTextModel):
 		out['rtt'] = time.time() - t0
 		out['text'] = resp['choices'][0]['message']['content']
 		out['usage'] = dict(resp['usage'])
+		out['cost'] = self.get_usd_cost(resp['usage'])
 		self.callbacks_after(out, resp)
 		return out
 
@@ -201,6 +203,7 @@ class EmbeddingModel(BaseTextModel):
 		out['rtt'] = time.time() - t0
 		out['vectors'] = [x['embedding'] for x in resp['data']]
 		out['usage']  = dict(resp['usage'])
+		out['cost'] = self.get_usd_cost(resp['usage'])
 		self.callbacks_after(out, resp)
 		return out
 
