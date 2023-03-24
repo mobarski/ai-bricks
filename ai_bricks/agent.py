@@ -31,7 +31,7 @@ Thought: you should always think about what to do
 Action: the action to take, should be one of {' '.join(actions)}
 Action Input: the input to the action
 Observation: the result of the action
-Score: observation score, 1 if progress was made, 0 otherwise
+Reward: 1 if progress was made, 0 otherwise
 ... (this Thought/Action/Action Input/Observation/Reward can repeat N times)
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
@@ -78,7 +78,7 @@ def v1(question, model, actions, hints='', iter_limit=5):
 				obs = f'Action "{action}" is not allowed. Allowed actions: {" ".join(actions)}.'
 			else:
 				obs = actions[action](input)
-			prompt = prompt + x['text'].rstrip() + f'\nObservation: {str(obs).rstrip()}\n' #+'Reward:'
+			prompt = prompt + x['text'].rstrip() + f'\nObservation: {str(obs).rstrip()}\n' + 'Reward:'
 			print(f"Observation: {str(obs).rstrip()}") # XXX
 			#print(prompt) # XXX
 		else:
