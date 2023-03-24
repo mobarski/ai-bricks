@@ -2,12 +2,14 @@
 
 import traceback
 
+VERBOSE_EXCEPTIONS = True
+
 def return_exceptions(fun):
 	def wrapped(*a,**kw):
 		try:
 			return fun(*a,**kw)
 		except Exception as e:
-			return traceback.format_exc()
+			return traceback.format_exc() if VERBOSE_EXCEPTIONS else str(e)
 	return wrapped
 
 # ===[ PYTHON ]=====================================================================================
@@ -27,6 +29,23 @@ def python_eval(text):
 	_globals = {'math':math, 'time':time, 'random':random, 'datetime':datetime, '__builtins__':builtins}
 	_locals = {}
 	return str(eval(text, _globals, _locals))
+
+# ===[ REQUESTS ]===================================================================================
+
+import requests
+from bs4 import BeautifulSoup
+import re
+
+@return_exceptions
+def requests_get_headlines(url):
+	html = requests.get(url).text
+	soup = BeautifulSoup(html, 'html.parser')
+	out = []
+	for h in ['h1','h2']: #'h3','h4','h5','h6']:
+		out += [x.get_text() for x in soup.findAll(h)]
+	text = '\n'.join(out)
+	text = re.sub(r'[\t ]+', ' ', text)
+	return text[:1000]
 
 # ===[ WIKIPEDIA ]==================================================================================
 
