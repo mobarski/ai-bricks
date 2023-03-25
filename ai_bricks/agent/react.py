@@ -1,11 +1,15 @@
+import datetime
 import re
+
 
 # TODO: reward
 # TODO: reflexion
 # TODO: pruning
 # TODO: loop detection
 
+
 REFLECTION_BAD_FORMAT = "Reflection: I didn't followed the format. I will try again."
+
 
 EXAMPLE = """
 Example:
@@ -19,7 +23,16 @@ Reward: 0
 """
 EXAMPLE = ""
 
-def get_system_prompt(question, actions, hints):
+def get_system_prompt(question, actions):
+	hints = f"""
+You are augmented with the following actions: {' '.join(actions)}.
+Following modules are already imported in *python-eval*: math, time, datetime, random.
+Remember that *python-eval* only evaluetes expressions (up to 300 chars) and not code blocks!
+Don't import any module on your own in *python-eval*.
+Be careful and avoid off by one errors.
+Current time: {datetime.datetime.today()}
+"""
+
 	return f"""
 Answer the following questions as best you can.
 Question: {question}
@@ -39,8 +52,9 @@ Final Answer: the final answer to the original input question
 {EXAMPLE}
 """
 
+# ===[ v1 ]====================================================================
 
-def v1(question, model, actions, hints='', iter_limit=5):
+def v1(question, model, actions, iter_limit=5):
 	out = {'text':''}
 	tmp = {'rtt_list':[], 'cost_list':[]}
 	#
