@@ -16,6 +16,7 @@ class TextModel:
 	MAPPED = {'stop':'stop_sequences'}
 	
 	def __init__(self, name, **kwargs):
+		self.name = name
 		self.config = kwargs
 		self.config['model'] = name
 		self.client = anthropic.Client(api_key)
@@ -23,8 +24,10 @@ class TextModel:
 	def complete(self, prompt, **kw):
 		out = {}
 		#
+		system_prompt = kw.get('system_prompt', self.config.get('system_prompt',''))
+		final_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
 		kwargs = dict(
-			prompt = f"{anthropic.HUMAN_PROMPT} {prompt}{anthropic.AI_PROMPT}",
+			prompt = f"{anthropic.HUMAN_PROMPT} {final_prompt}{anthropic.AI_PROMPT}",
 			max_tokens_to_sample = 1000, # TODO
 		)
 		config = self.config.copy()

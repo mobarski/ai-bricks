@@ -21,14 +21,17 @@ I will name this section "Final Note".
 """
 
 EXAMPLES = """
-Example:
+Examples:
 
 Question: Who is higher, King Arthur or Queen Guinevere?
-Thought: I shoul look up the height of King Arthur first, then Queen Guinevere and then compare them.
+Plan: I should look up the height of King Arthur first, then Queen Guinevere and then compare them.
+Thought: I should look up the height of King Arthur first.
 Action: wikipedia-search
 Action Input: "King Arthur" height
 Observation: ['King Arthur']
 Reward: 0
+Thought: Now I should check summary of the first result.
+...
 """
 
 MAIN_PROMPT = """
@@ -36,9 +39,9 @@ Answer the following questions as best you can.
 Question: {{ question }}
 
 You are augmented with the following actions: {{ ' '.join(actions) }}.
-Following modules are already imported in *python-eval*: math, time, datetime, random.
-Remember that *python-eval* only evaluetes expressions (up to 300 chars) and not code blocks!
-Don't import any module on your own in *python-eval*.
+Following modules are already imported in `python-eval`: math, time, datetime, random.
+Remember that `python-eval` only evaluetes expressions (up to 300 chars) and not code blocks!
+Don't import any module on your own in `python-eval`.
 Be careful and avoid off by one errors.
 Current time: {{ current_time }}
 
@@ -62,12 +65,13 @@ Final Answer: the final answer to the original input question
 
 def get_system_prompt(question, actions):
 	current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-	examples = ""
+	examples = EXAMPLES
 	notes = [
-		'To find moons in the solar system that are bigger than Mercury, look for a list of natural satellites on Wikipedia and compare their sizes to that of Mercury. The 20 natural satellites that are large enough to be gravitationally rounded are: Ganymede, Titan, Callisto, Io, Moon, Europa, Triton, Eris, Pluto, Haumea, Makemake, Ceres, Rhea, Charon, Umbriel, Ariel, Dione, Tethys, Oberon, and Titania. None of these moons are bigger than Mercury, which has a diameter of 4879.4 km.',
-		'Unfortunately, I was not able to find any moons in the solar system that are larger than Mercury. However, I can use the list of natural satellites on Wikipedia to compare the sizes of the largest moons to that of Mercury.',
-		'There are no known moons in the solar system that are larger than the planet Mercury. However, the largest natural satellites in the solar system are Ganymede, Titan, Callisto, Io, Moon, Europa, Triton, Eris, Pluto, Haumea, Makemake, Ceres, Rhea, Charon, Umbriel, Ariel, Dione, Tethys, Oberon, and Titania.',
-		'To find natural satellites in the solar system that are bigger than Mercury, search for "list of natural satellites" on Wikipedia and compare their sizes to that of Mercury. The 20 natural satellites that are large enough to be gravitationally rounded are: Ganymede, Titan, Callisto, Io, Moon, Europa, Triton, Eris, Pluto, Haumea, Makemake, Ceres, Rhea, Charon, Umbriel, Ariel, Dione, Tethys, Oberon, and Titania. None of these moons are bigger than Mercury, which has a diameter of 4879.4 km.',
+		#'To find moons in the solar system that are bigger than Mercury, look for a list of natural satellites on Wikipedia and compare their sizes to that of Mercury. The 20 natural satellites that are large enough to be gravitationally rounded are: Ganymede, Titan, Callisto, Io, Moon, Europa, Triton, Eris, Pluto, Haumea, Makemake, Ceres, Rhea, Charon, Umbriel, Ariel, Dione, Tethys, Oberon, and Titania. None of these moons are bigger than Mercury, which has a diameter of 4879.4 km.',
+		#'Unfortunately, I was not able to find any moons in the solar system that are larger than Mercury. However, I can use the list of natural satellites on Wikipedia to compare the sizes of the largest moons to that of Mercury.',
+		#'There are no known moons in the solar system that are larger than the planet Mercury. However, the largest natural satellites in the solar system are Ganymede, Titan, Callisto, Io, Moon, Europa, Triton, Eris, Pluto, Haumea, Makemake, Ceres, Rhea, Charon, Umbriel, Ariel, Dione, Tethys, Oberon, and Titania.',
+		#'To find natural satellites in the solar system that are bigger than Mercury, search for "list of natural satellites" on Wikipedia and compare their sizes to that of Mercury. The 20 natural satellites that are large enough to be gravitationally rounded are: Ganymede, Titan, Callisto, Io, Moon, Europa, Triton, Eris, Pluto, Haumea, Makemake, Ceres, Rhea, Charon, Umbriel, Ariel, Dione, Tethys, Oberon, and Titania. None of these moons are bigger than Mercury, which has a diameter of 4879.4 km.',
+		'I should look into the list of natural satellites and list of solar system objects by size to find moons larger than Pluto.',
 	]
 	return render(MAIN_PROMPT, **locals())
 

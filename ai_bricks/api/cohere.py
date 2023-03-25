@@ -22,6 +22,7 @@ class TextModel:
 	MAPPED = {'stop':'stop_sequences'}
 	
 	def __init__(self, name, **kwargs):
+		self.name = name
 		self.config = kwargs
 		self.config['model'] = name
 		self.client = cohere.Client(api_key)
