@@ -24,7 +24,10 @@ EXAMPLES = """
 Examples:
 
 Question: Who is higher, King Arthur or Queen Guinevere?
-Plan: I should look up the height of King Arthur first, then Queen Guinevere and then compare them.
+Plan:
+1. I should look up the height of King Arthur
+2. Then Queen Guinevere's height
+3. Then compare them
 Thought: I should look up the height of King Arthur first.
 Action: wikipedia-search
 Action Input: "King Arthur" height
