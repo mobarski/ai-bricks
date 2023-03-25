@@ -5,7 +5,7 @@ from ai_bricks.api import anthropic
 
 # model = openai.model('text-davinci-003', temperature=0) # key from OPENAI_KEY env variable
 model = openai.model('gpt-3.5-turbo', temperature=0.5) # key from OPENAI_KEY env variable
-# model = openai.model('gpt-4', temperature=0) # key from OPENAI_KEY env variable
+#model = openai.model('gpt-4', temperature=0) # key from OPENAI_KEY env variable
 # model = anthropic.model('claude-instant-v1', temperature=0.5) # key from ANTHROPIC_KEY env variable
 #model = anthropic.model('claude-v1', temperature=0.5) # key from ANTHROPIC_KEY env variable
 # model = anthropic.model('claude-v1.2', temperature=0.5) # key from ANTHROPIC_KEY env variable
@@ -20,14 +20,15 @@ actions = {
 	'wikipedia-page-summary': agent.actions.wikipedia_summary,
 	'wikipedia-find-pages':   agent.actions.wikipedia_search,
 	'python-eval':            agent.actions.python_eval,
-    'url-get-headlines':	  agent.actions.requests_get_headlines,
+    #'url-get-headlines':	  agent.actions.requests_get_headlines,
 }
 
 
-question = "What is the sum of square root of every third number from 123 to the year of the recent Russian invasion of Ukraine?"
+#question = "What is the sum of square root of every third number from 123 to the year of the recent Russian invasion of Ukraine?"
+question = "Which natural satalites in the solar system are bigger than the planet Mercury?"
 #question = "Whats on the news today? Check tvn24."
 
-resp = agent.get('v1')(question, model=model, actions=actions, iter_limit=10)
+resp = agent.get('v1')(question, model=model, actions=actions, iter_limit=5)
 print('agent response:', resp)
 rtt_sum = sum(resp["rtt_list"])
 cost_sum = sum(resp.get('cost_list',[]))
