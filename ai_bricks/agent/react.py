@@ -59,7 +59,7 @@ def v1(question, model, actions, iter_limit=5):
 	tmp = {'rtt_list':[], 'cost_list':[]}
 	#
 	print(f'\nQUESTION: {question}\n')
-	system = get_system_prompt(question, actions, hints)
+	system = get_system_prompt(question, actions)
 	#print('SYSTEM PROMPT:', system) # XXX
 	prompt = "Begin!\n"
 	for i in range(iter_limit):
