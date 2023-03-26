@@ -102,7 +102,10 @@ class TextModel(BaseTextModel):
 		resp = openai.Completion.create(**kwargs)
 		#
 		out['rtt'] = time.time() - t0
-		out['text']  = resp['choices'][0]['text']
+		if 'n' in kwargs:
+			out['texts'] = [x['text'] for x in resp['choices']]
+		else:
+			out['text']  = resp['choices'][0]['text']
 		out['usage'] = dict(resp['usage'])
 		self.callbacks_after(out, resp)
 		return out
@@ -172,7 +175,10 @@ class ChatModel(BaseTextModel):
 		resp = openai.ChatCompletion.create(**kwargs)
 		#
 		out['rtt'] = time.time() - t0
-		out['text'] = resp['choices'][0]['message']['content']
+		if 'n' in kwargs:
+			out['texts'] = [x['message']['content'] for x in resp['choices']]
+		else:
+			out['text'] = resp['choices'][0]['message']['content']
 		out['usage'] = dict(resp['usage'])
 		out['cost'] = self.get_usd_cost(resp['usage'])
 		self.callbacks_after(out, resp)
