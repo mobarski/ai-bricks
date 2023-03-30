@@ -162,6 +162,9 @@ class ChatModel(BaseTextModel):
 		system_prompt = kw.get('system_prompt', self.config.get('system_prompt',''))
 		if system_prompt:
 			messages += [{'role':'system', 'content':system_prompt}]
+		start = kw.get('start', self.config.get('start',''))
+		if start:
+			prompt += start
 		messages += [{'role':'user', 'content':prompt}]
 		kwargs = dict(
 			max_tokens = self.max_tokens - self.token_count(prompt + system_prompt),
@@ -176,9 +179,9 @@ class ChatModel(BaseTextModel):
 		#
 		out['rtt'] = time.time() - t0
 		if 'n' in kwargs:
-			out['texts'] = [x['message']['content'] for x in resp['choices']]
+			out['texts'] = [start+x['message']['content'] for x in resp['choices']]
 		else:
-			out['text'] = resp['choices'][0]['message']['content']
+			out['text'] = start+resp['choices'][0]['message']['content']
 		out['usage'] = dict(resp['usage'])
 		out['cost'] = self.get_usd_cost(resp['usage'])
 		self.callbacks_after(out, resp)

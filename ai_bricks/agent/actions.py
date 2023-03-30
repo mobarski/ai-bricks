@@ -1,10 +1,17 @@
 # ===[ UTILS ]======================================================================================
 
-import traceback
+from jinja2 import Template
+def render(template, **kw):
+	return Template(template).render(**kw)
 
-VERBOSE_EXCEPTIONS = True
+
+import traceback
+from functools import wraps
+
+VERBOSE_EXCEPTIONS = False
 
 def return_exceptions(fun):
+	@wraps(fun)
 	def wrapped(*a,**kw):
 		try:
 			return fun(*a,**kw)
@@ -12,10 +19,26 @@ def return_exceptions(fun):
 			return traceback.format_exc() if VERBOSE_EXCEPTIONS else str(e)
 	return wrapped
 
+# EXPERIMENTAL / SANDBOX
+def get_actions(tools, hints:dict=None) -> dict:
+	actions = {}
+	help = {}
+	hints = hints or {}
+	for fun in tools:
+		name = fun.__name__
+		actions[name] = fun
+		#
+		instr = fun.__doc__ or ''
+		hint = hints.get(name, '')
+		sep = '; ' if instr and hint else ''
+		help[name] = instr + sep + hint
+	return {'actions':actions, 'instructions':help}
+
 # ===[ PYTHON ]=====================================================================================
 
 @return_exceptions
 def python_eval(text):
+	"evaluate python expression; imported modules: math, time, random, datetime; do not import anything else"
 	import math
 	import time
 	import random
@@ -53,21 +76,56 @@ def requests_get_headlines(url):
 
 import wikipedia
 
-@return_exceptions
-def wikipedia_summary(text):
-	return str(wikipedia.summary(text))
+wiki_template = """
+{% for p,s in summaries %}
+PAGE: {{p}}
+{{s}}
+
+{% endfor %}
+
+OTHER PAGES: {{', '.join(pages[n+1:])}}
+"""
+
+def wikipedia_summaries(query):
+	"search wikipedia and return up to 3 page summaries; use only one entity in the query"
+	n = 3
+	query = query.strip()
+	pages = wikipedia.search(query)
+	if not pages and query[0]==query[-1]=='"':
+		pages = wikipedia.search(query[1:-1])
+	summaries = []
+	for p in pages:
+		try:
+			summary = wikipedia.summary(p)
+		except:
+			continue
+		summaries += [(p,summary)]
+		if len(summaries) >= n:
+			break
+	if summaries:
+		output = render(wiki_template, **locals()).rstrip()
+	else:
+		output = 'No results! Remember to use only one entity in the query.'
+	return output
 
 @return_exceptions
 def wikipedia_search(text):
+	"get names of wikipedia pages matching a search query"
 	return str(wikipedia.search(text))
+
+@return_exceptions
+def wikipedia_summary(text):
+	"get summary of a wikipedia page"
+	return str(wikipedia.summary(text))
+
+@return_exceptions
+def wikipedia_page_links(text):
+	"get links of a wikipedia page"
+	return str(wikipedia.page(text).links)
 
 @return_exceptions
 def wikipedia_page(text):
 	return str(wikipedia.page(text).content)
-
-@return_exceptions
-def wikipedia_page_links(text):
-	return str(wikipedia.page(text).links)
 
 @return_exceptions
 def wikipedia_page_html(text):
