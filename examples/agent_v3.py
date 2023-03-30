@@ -1,11 +1,11 @@
 import sys; sys.path[0:0] = ['.','..'] # for local testing
 from ai_bricks.api import openai
 from ai_bricks import agent
+aa = agent.actions
 
-agent.actions.wikipedia_summaries.__name__="wikipedia_search"
 actions = [
-    agent.actions.wikipedia_summaries,
-    agent.actions.python_eval,
+    aa.wikipedia_search,
+    aa.python_eval,
 ]
 
 model = openai.model('gpt-3.5-turbo', temperature=0.5) # key from OPENAI_KEY env variable

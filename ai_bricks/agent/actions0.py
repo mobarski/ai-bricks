@@ -86,7 +86,7 @@ PAGE: {{p}}
 OTHER PAGES: {{', '.join(pages[n+1:])}}
 """
 
-def wikipedia_search(query):
+def wikipedia_summaries(query):
 	"search wikipedia and return up to 3 page summaries; use only one entity in the query"
 	n = 3
 	query = query.strip()
@@ -109,5 +109,37 @@ def wikipedia_search(query):
 	return output
 
 @return_exceptions
+def wikipedia_search(text):
+	"get names of wikipedia pages matching a search query"
+	return str(wikipedia.search(text))
+
+@return_exceptions
+def wikipedia_summary(text):
+	"get summary of a wikipedia page"
+	return str(wikipedia.summary(text))
+
+@return_exceptions
+def wikipedia_page_links(text):
+	"get links of a wikipedia page"
+	return str(wikipedia.page(text).links)
+
+@return_exceptions
+def wikipedia_page(text):
+	return str(wikipedia.page(text).content)
+
+@return_exceptions
+def wikipedia_page_html(text):
+	return str(wikipedia.page(text).html())
+
+@return_exceptions
+def wikipedia_page_images(text):
+	return str(wikipedia.page(text).images)
+
+@return_exceptions
+def wikipedia_page_references(text):
+	return str(wikipedia.page(text).references)
+
+@return_exceptions
 def wikipedia_set_lang(text):
 	return str(wikipedia.set_lang(text))
+

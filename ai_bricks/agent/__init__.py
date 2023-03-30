@@ -1,11 +1,11 @@
 from . import actions
+from . import react0
 from . import react
-from . import react2
 
 def get(name):
 	if name=='v1':
-		return react.v1
+		return react0.v1
 	elif name=='v2':
-		return react.v2
+		return react0.v2
 	elif name=='react':
-		return react2.Agent
+		return react.Agent

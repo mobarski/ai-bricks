@@ -18,7 +18,7 @@ import os
 def use_key(key):
 	openai.api_key = key
 if not openai.api_key:
-	use_key(os.getenv('OPENAI_KEY'))
+	use_key(os.getenv('OPENAI_KEY', os.getenv('OPENAI_API_KEY', '')))
 
 def model(name, **kwargs):
 	if name.startswith('gpt-'):
