@@ -50,7 +50,7 @@ POST_OBSERVATION_START = "" # response priming
 MAIN_PROMPT = """
 Task: Answer the following question as best you can.
 Question: {{ question }}
-Current time: {{ current_time }}
+{#Current time: {{ current_time }}#}
 
 You are augmented with the following actions:
 {% for action,doc in zip(actions,docs) %}
@@ -78,6 +78,7 @@ Final Answer: the final answer to the original input question
 
 Important:
 - always follow the protocol - Thought, Action, Input, Observation, Summary, Thought, etc
+- you don't know current time and date
 {#
 - always follow Observation with Observation Summary, always!
 - never use "and", "or", "vs" or "," in wikipedia input
@@ -125,7 +126,7 @@ class Agent:
 				break
 		else:
 			self.reflect_on_end()
-		self.on_end(answer)
+		self.on_end(question, answer)
 		return answer
 
 	def act(self, steps) -> str:
@@ -172,7 +173,7 @@ class Agent:
 		resp = self.model.complete(self.prompt,
 			     system_prompt=self.system_prompt,
 				 start=self.start,
-				 stop=['Observation:'])
+				 stop=['Observation:','Human:'])
 		self.agg_cost(resp)
 		return resp
 
@@ -182,7 +183,7 @@ class Agent:
 		steps = re.findall(pattern, text, re.DOTALL|re.MULTILINE)
 		return steps		
 
-	def on_end(self, answer):
+	def on_end(self, question, answer):
 		"called at the end of the agent's run"
 		if self.verbose:
 			tokens = sum(self.cost['total_tokens_list'])
@@ -190,6 +191,7 @@ class Agent:
 			rtt_sum = sum(self.cost['rtt_list'])
 			cnt = len(self.cost['rtt_list'])
 			print(f'\n{FG.RED}DONE IN {FG.WHITE}{rtt_sum:0.1f}s{FG.RED} ({cnt} steps, {rtt_sum/cnt:0.2f}s per step) FOR {FG.WHITE}${cost_sum:0.4f}{FG.RED} ({tokens} {self.model.name} tokens)')
+			print(f'\n{FG.RED}Question: {FG.WHITE}{question.strip()}')
 			print(f'\n{FG.RED}Final Answer: {FG.WHITE}{answer}\n')
 
 	def clear_observations(self):
