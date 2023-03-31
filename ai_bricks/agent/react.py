@@ -31,7 +31,6 @@ def get_doc(fun):
 
 REFLECTION_BAD_FORMAT = "Reflection: I didn't followed the format. I will try again."
 
-
 REFLECTION_NO_ANSWER = """
 Reflection: I didn't find the answer.
 I can now write a note to my future self that will help me find the answer next time (it can be longer than just one line).
@@ -41,9 +40,12 @@ I will forget everything I learned in this session except for the note.
 I will name this section "Final Note".
 """
 
-
 EXAMPLES = """
 """
+
+POST_OBSERVATION_REMINDER = "The next item must be a Summary followed by a Thought!"
+POST_OBSERVATION_START = "" # response priming
+
 
 MAIN_PROMPT = """
 Task: Answer the following question as best you can.
@@ -63,20 +65,23 @@ Question: {{ question }}
 Thought: you should always think about what to do
 Action: the action to take (only the name, not the arguments)
 Input: the input to the action
-Observation: the result of the action
-Summary: most important information from the observation that you want to remember
+Observation: the result of the action{#; you will see this only once, so store anything important in the next Memory field#}
+Summary: key takeways - extract all data (esp numeric data) relevant to the question{#the most important information from the Observation that you want to remember#}, one item per line
 Repeat:
 - this Question/Thought/Action/Input/Observation{#/Memory#}{#/Reward#}/Summary can repeat N times
-- if you don't want to take action you can skip from one Thought to the next Thought
+- if you don't want to take any action you can skip from one Thought to the next Thought
 {# Reward: 1 if progress was made, 0 otherwise #}
 {# Summary: knowledge extract from the last (and only the last!) observation; this field will stay in the context #}
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
+
 Important:
 - always follow the protocol - Thought, Action, Input, Observation, Summary, Thought, etc
+{#
 - always follow Observation with Observation Summary, always!
 - never use "and", "or", "vs" or "," in wikipedia input
+#}
 {{ examples }}
 
 {% if notes %}Notes from previous sessions:
@@ -155,10 +160,12 @@ class Agent:
 			observation = str(e)
 		observation = normalize_output(observation)
 		self.clear_observations()
-		self.prompt += f'Observation: {observation}\nReminder: next item must be a Summary followed by a Thought!\n'
-		self.start = 'Summary:' # XXX XXX XXX
+		reminder = POST_OBSERVATION_REMINDER
+		self.prompt += f'Observation: {observation}\nReminder: {reminder}\n'
+		self.start = POST_OBSERVATION_START
 		if self.verbose:
 			print_steps([('Observation', observation)], FG.YELLOW)
+			print_steps([('Reminder', reminder)], FG.CYAN)
 		
 	def complete(self) -> dict:
 		"get response from model"
@@ -193,7 +200,7 @@ class Agent:
 		log(0,'='*80)
 		log(0,'prompt_before_clear', before, self.prompt)
 		#self.prompt = re.sub(pattern, '', self.prompt, flags=re.DOTALL|re.MULTILINE)
-		#self.prompt = re.sub(pattern, 'Observation: (REMOVED)\n', self.prompt, flags=re.DOTALL|re.MULTILINE)
+		self.prompt = re.sub(pattern, 'Observation: (REMOVED)\n', self.prompt, flags=re.DOTALL|re.MULTILINE)
 		# steps = self.parse_steps(self.prompt)
 		# for i,_ in enumerate(steps):
 		# 	if steps[i][0]=='Observation':

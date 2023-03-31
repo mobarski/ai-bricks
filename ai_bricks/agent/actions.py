@@ -104,6 +104,7 @@ def wikipedia_search_many(query):
 	limit = None # limit summary length
 	summaries = [] # list of (page,summary) tuples
 	other_pages = []
+	done = set()
 	for q in from_json(query):
 		pages = wikipedia.search(q)
 		for i,p in enumerate(pages):
@@ -111,7 +112,10 @@ def wikipedia_search_many(query):
 				summary = wikipedia.summary(p)[:limit]
 			except:
 				continue
+			if p in done:
+				continue
 			summaries += [(p,summary)]
+			done.add(p)
 			if len(summaries) >= n:
 				other_pages += pages[i+1:]
 				break
