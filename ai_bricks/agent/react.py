@@ -1,4 +1,4 @@
-from textwrap import dedent
+from textwrap import indent,dedent
 import datetime
 import re
 
@@ -6,6 +6,11 @@ import re
 import colorama
 colorama.init(autoreset=True)
 FG=colorama.Fore
+
+# XXX
+def log(id,*a):
+	with open(f'log{id}.txt','a') as f:
+		print(*a, file=f)
 
 # ===[ UTILS ]=================================================================
 
@@ -40,7 +45,6 @@ I will name this section "Final Note".
 EXAMPLES = """
 """
 
-
 MAIN_PROMPT = """
 Task: Answer the following question as best you can.
 Question: {{ question }}
@@ -48,22 +52,31 @@ Current time: {{ current_time }}
 
 You are augmented with the following actions:
 {% for action,doc in zip(actions,docs) %}
-- {{ action }} - {{ doc }}
+- {{ action }}: {{ doc }}
 {%- endfor %}
 
 Use the following response protocol and format:
 {#Plan:
 - start by making a plan
 - use information from previous sessions to make a better plan#}
+Question: {{ question }}
 Thought: you should always think about what to do
 Action: the action to take (only the name, not the arguments)
 Input: the input to the action
 Observation: the result of the action
-{#Reward: 1 if progress was made, 0 otherwise#}
-... (this Thought/Action/Action Input/Observation{#/Reward#} can repeat N times)
-... (if you don't want to take action you can skip from one Thought to the next Thought)
+Summary: most important information from the observation that you want to remember
+Repeat:
+- this Question/Thought/Action/Input/Observation{#/Memory#}{#/Reward#}/Summary can repeat N times
+- if you don't want to take action you can skip from one Thought to the next Thought
+{# Reward: 1 if progress was made, 0 otherwise #}
+{# Summary: knowledge extract from the last (and only the last!) observation; this field will stay in the context #}
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
+
+Important:
+- always follow the protocol - Thought, Action, Input, Observation, Summary, Thought, etc
+- always follow Observation with Observation Summary, always!
+- never use "and", "or", "vs" or "," in wikipedia input
 {{ examples }}
 
 {% if notes %}Notes from previous sessions:
@@ -75,6 +88,7 @@ Final Answer: the final answer to the original input question
 # ===[ v3 ]====================================================================
 
 class Agent:
+	"Zero-shot ReAct agnet"
 	def __init__(self, model, actions, id='a0'):
 		self.id = id
 		self.model = model
@@ -82,7 +96,7 @@ class Agent:
 		self.action_by_name = {a.__name__:a for a in actions}
 		self.db = {} # TODO
 		self.verbose = False
-		self.cost = {'rtt_list':[], 'cost_list':[]}
+		self.cost = {'rtt_list':[], 'cost_list':[], 'total_tokens_list':[]}
 
 	def run(self, question, n_turns=5, verbose=True) -> str:
 		"run agent for n_turns, return answer if found"
@@ -94,9 +108,13 @@ class Agent:
 		# main loop
 		for i in range(n_turns):
 			resp = self.complete()
+			self.prompt += resp['text'].strip()+'\n' # TODO: here?
+			log(1,'---')
+			log(1,resp['text'].strip())
 			steps = self.parse_steps(resp['text'])
 			if verbose:
 				print_steps(steps)
+				print('---') # indicate end of model response
 			answer = self.act(steps)
 			if answer:
 				break
@@ -108,10 +126,13 @@ class Agent:
 	def act(self, steps) -> str:
 		"act on steps, return answer if found"
 		answer = ''
+		# protocol error
 		if not steps:
 			self.reflect_on_error("I didn't follow the protocol.")
+		# final answer
 		elif steps[-1][0] == 'Final Answer':
 			answer = steps[-1][1].strip()
+		# action
 		elif steps[-1][0] == 'Input' and steps[-2][0] == 'Action':
 			action = steps[-2][1].strip()
 			if action in self.action_by_name:
@@ -119,6 +140,7 @@ class Agent:
 				self.action(action, input)
 			else:
 				self.reflect_on_error('I used an action that I am not supposed to use.')
+		# protocol error
 		else:
 			self.reflect_on_error("I didn't follow the protocol.")
 		#
@@ -132,8 +154,9 @@ class Agent:
 		except Exception as e:
 			observation = str(e)
 		observation = normalize_output(observation)
-		self.prompt += f'Observation: {observation}\n'
-		self.start = '' #'Reward:'
+		self.clear_observations()
+		self.prompt += f'Observation: {observation}\nReminder: next item must be a Summary followed by a Thought!\n'
+		self.start = 'Summary:' # XXX XXX XXX
 		if self.verbose:
 			print_steps([('Observation', observation)], FG.YELLOW)
 		
@@ -155,15 +178,37 @@ class Agent:
 	def on_end(self, answer):
 		"called at the end of the agent's run"
 		if self.verbose:
+			tokens = sum(self.cost['total_tokens_list'])
 			cost_sum = sum(self.cost['cost_list'])
 			rtt_sum = sum(self.cost['rtt_list'])
 			cnt = len(self.cost['rtt_list'])
-			print(f'\nDONE IN {FG.WHITE}{rtt_sum:0.1f}s{FG.RESET} AND {cnt} steps ({rtt_sum/cnt:0.2f}s per step) FOR {FG.WHITE}${cost_sum:0.4f}{FG.RESET} ({self.model.name})')
+			print(f'\n{FG.RED}DONE IN {FG.WHITE}{rtt_sum:0.1f}s{FG.RED} ({cnt} steps, {rtt_sum/cnt:0.2f}s per step) FOR {FG.WHITE}${cost_sum:0.4f}{FG.RED} ({tokens} {self.model.name} tokens)')
 			print(f'\n{FG.RED}Final Answer: {FG.WHITE}{answer}\n')
+
+	def clear_observations(self):
+		"clear past observations from the prompt"
+		pattern = "^Observation:(.*?)(?=\\Z|^[A-Z][A-Za-z0-9 ]+:)"
+		#pattern = "^([A-Z][^:]+):(.*?)(?=\\Z|^[A-Z][A-Za-z0-9 ]+:)"
+		before = len(self.prompt) # XXX
+		log(0,'='*80)
+		log(0,'prompt_before_clear', before, self.prompt)
+		#self.prompt = re.sub(pattern, '', self.prompt, flags=re.DOTALL|re.MULTILINE)
+		#self.prompt = re.sub(pattern, 'Observation: (REMOVED)\n', self.prompt, flags=re.DOTALL|re.MULTILINE)
+		# steps = self.parse_steps(self.prompt)
+		# for i,_ in enumerate(steps):
+		# 	if steps[i][0]=='Observation':
+		# 		steps[i] = ('Observation', '(REMOVED)')
+		#new_prompt = '\n'.join([f'{s[0]}: {s[1].strip()}' for s in steps])
+		#self.prompt = new_prompt
+		after = len(self.prompt) # XXX
+		log(0,'prompt_after_clear', after, self.prompt)
+		print(FG.RED+f'CLEAR: {after-before}') # XXX
 
 	def reflect_on_error(self, msg):
 		self.prompt += f'Reflection: {msg}\n'
 		self.start = '' # TODO: check Plan: and Thought:
+		if self.verbose:
+			print_steps([('Reflection', msg)], FG.RED)
 	
 	def reflect_on_end(self):
 		pass # TODO
@@ -190,6 +235,7 @@ class Agent:
 	def agg_cost(self, resp):
 		self.cost['rtt_list'].append(resp['rtt'])
 		self.cost['cost_list'].append(resp.get('cost',0))
+		self.cost['total_tokens_list'].append(resp.get('usage',{}).get('total_tokens',0))
 	
 # =============================================================================
 

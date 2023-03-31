@@ -1,10 +1,22 @@
 # ===[ UTILS ]======================================================================================
 
+# JSON
+import json
+def from_json(text):
+	text = text.strip()
+	try:
+		return json.loads(text)
+	except:
+		text = text.replace("'", '"')
+		return json.loads(text)
+
+# TEMPLATES
 from jinja2 import Template
 def render(template, **kw):
 	return Template(template).render(**kw)
 
 
+# EXCEPTIONS
 import traceback
 from functools import wraps
 
@@ -38,7 +50,7 @@ def get_actions(tools, hints:dict=None) -> dict:
 
 @return_exceptions
 def python_eval(text):
-	"evaluate python expression; imported modules: math, time, random, datetime; do not import anything else"
+	"evaluate single python expression; imported modules: math, time, random, datetime; do not import anything else; use only one line of code"
 	import math
 	import time
 	import random
@@ -78,32 +90,64 @@ import wikipedia
 
 wiki_template = """
 {% for p,s in summaries %}
-PAGE: {{p}}
-{{s}}
+PAGE = {{ p }}
+CONTENT = {{ s.strip() }}
 
 {% endfor %}
 
-OTHER PAGES: {{', '.join(pages[n+1:])}}
+OTHER PAGES = {{ json.dumps(other_pages) }}
 """
 
+def wikipedia_search_many(query):
+	"query wikipedia with a list of entities / subjects"
+	n = 1
+	limit = None # limit summary length
+	summaries = [] # list of (page,summary) tuples
+	other_pages = []
+	for q in from_json(query):
+		pages = wikipedia.search(q)
+		for i,p in enumerate(pages):
+			try:
+				summary = wikipedia.summary(p)[:limit]
+			except:
+				continue
+			summaries += [(p,summary)]
+			if len(summaries) >= n:
+				other_pages += pages[i+1:]
+				break
+	if summaries:
+		kw = locals()
+		kw['json'] = json
+		output = render(wiki_template, **kw).rstrip()
+	else:
+		output = 'No results!'
+	return output
+
+# SUNSET
 def wikipedia_search(query):
-	"search wikipedia and return up to 3 page summaries; use only one entity in the query"
-	n = 3
+	"wikipedia summary about person, place, company, historical event, or other subject. "
+	if " and "	in query or " or " in query or " vs " in query or ", " in query or " & " in query:
+		return 'Error: Never use "and", "or", "vs", ",", or "&" in the query!'
+	n = 1
+	limit = None
 	query = query.strip()
 	pages = wikipedia.search(query)
 	if not pages and query[0]==query[-1]=='"':
-		pages = wikipedia.search(query[1:-1])
+		pages = wikipedia.search(query.replace('"',''))
 	summaries = []
-	for p in pages:
+	other_pages = []
+	for i,p in enumerate(pages):
 		try:
-			summary = wikipedia.summary(p)
+			summary = wikipedia.summary(p)[:limit]
 		except:
 			continue
 		summaries += [(p,summary)]
 		if len(summaries) >= n:
+			other_pages += pages[i+1:]
 			break
 	if summaries:
-		output = render(wiki_template, **locals()).rstrip()
+		kw = locals()
+		output = render(wiki_template, **kw).rstrip()
 	else:
 		output = 'No results! Remember to use only one entity in the query.'
 	return output
@@ -111,3 +155,7 @@ def wikipedia_search(query):
 @return_exceptions
 def wikipedia_set_lang(text):
 	return str(wikipedia.set_lang(text))
+
+# XXX
+if __name__=="__main__":
+	print(wikipedia_search_many('["moons of saturn","moons of jupiter"]'))
