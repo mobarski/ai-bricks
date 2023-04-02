@@ -10,6 +10,7 @@
 # TODO: audio
 
 
+from multiprocessing.pool import ThreadPool
 import tiktoken
 import openai
 import time
@@ -185,6 +186,23 @@ class ChatModel(BaseTextModel):
 		out['usage'] = dict(resp['usage'])
 		out['cost'] = self.get_usd_cost(resp['usage'])
 		self.callbacks_after(out, resp)
+		return out
+
+	# TODO: factor out
+	def complete_many(self, prompts, **kw):
+		def worker(prompt):
+			return self.complete(prompt, **kw)
+		n_workers = kw.get('n_workers', 4)
+		pool = ThreadPool(n_workers)
+		resp_list = pool.map(worker, prompts)
+		out = {'rtt':0, 'cost':0, 'usage':{}, 'texts':[], 'raw':[]}
+		for resp in resp_list:
+			out['rtt'] += resp['rtt']
+			out['cost'] += resp['cost']
+			for k in resp['usage']:
+				out['usage'][k] = out['usage'].get(k,0) + resp['usage'][k]
+			out['texts'].append(resp['text'])
+			out['raw'].append(resp['raw'])
 		return out
 
 

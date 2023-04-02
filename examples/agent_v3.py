@@ -23,6 +23,9 @@ q = "Which planet has the heaviest moon - Jupiter or Saturn?"
 #q = "Which planet has bigger moon - Jupiter or Saturn?"
 
 #model = openai.model('gpt-3.5-turbo', temperature=0.0) # key from OPENAI_API_KEY env variable
-model = anthropic.model('claude-v1.2', temperature=0.0) # key from ANTHROPIC_API_KEY env variable
+#model = anthropic.model('claude-v1.2', temperature=0.0) # key from ANTHROPIC_API_KEY env variable
+model = anthropic.model('claude-instant-v1', temperature=0.0) # key from ANTHROPIC_API_KEY env variable
 a = agent.get('react')(model=model, actions=actions)
 answer = a.run(q, n_turns=10)
+
+#print(model.complete('2+2='))

@@ -78,6 +78,7 @@ Final Answer: the final answer to the original input question
 
 Important:
 - always follow the protocol - Thought, Action, Input, Observation, Summary, Thought, etc
+- never use empty Input 
 - you don't know current time and date
 {#
 - always follow Observation with Observation Summary, always!
