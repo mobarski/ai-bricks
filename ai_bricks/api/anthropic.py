@@ -4,7 +4,6 @@ from math import ceil
 from multiprocessing.pool import ThreadPool
 import os
 
-# TODO: exception on no key !!!
 
 api_key = None
 
@@ -12,9 +11,9 @@ def use_key(key):
 	global api_key
 	api_key = key
 if not api_key:
-	use_key(os.getenv('ANTHROPIC_KEY'))
+	use_key(os.getenv('ANTHROPIC_KEY', os.getenv('ANTHROPIC_API_KEY', '')))
 
-# TODO: ChatModel messages [('system','xxx'),('user','yyy'),('system','zzz'),('user','aaa')]
+# REF: https://console.anthropic.com/docs/api/reference
 class TextModel:
 	PARAMS = ['model','temperature','stop_sequences','max_tokens_to_sample']
 	MAPPED = {'stop':'stop_sequences'}
@@ -32,7 +31,7 @@ class TextModel:
 		final_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
 		kwargs = dict(
 			prompt = f"{anthropic.HUMAN_PROMPT} {final_prompt}{anthropic.AI_PROMPT}",
-			max_tokens_to_sample = 1000, # TODO
+			max_tokens_to_sample = 1000, # TODO !!! XXX !!! XXX !!! XXX !!!
 		)
 		config = self.config.copy()
 		config.update(kw) # NEW
@@ -91,10 +90,12 @@ class TextModel:
 		"return usage of the response"
 		prompt = kwargs.get('prompt','')
 		output = resp.get('completion','')[len(kwargs.get('start','')):]
-		chars_per_token = 4.0 # ???
 		out = {}
-		out['prompt_tokens'] = ceil(len(prompt)/chars_per_token) # anthropic.count_tokens(prompt)
-		out['completion_tokens'] = ceil(len(output)/chars_per_token) # anthropic.count_tokens(output)
+		#chars_per_token = 4.0 # ???
+		#out['prompt_tokens'] = ceil(len(prompt)/chars_per_token)
+		#out['completion_tokens'] = ceil(len(output)/chars_per_token)
+		out['prompt_tokens'] = anthropic.count_tokens(prompt)
+		out['completion_tokens'] = anthropic.count_tokens(output)
 		out['total_tokens'] = out['prompt_tokens'] + out['completion_tokens']
 		return out
 
